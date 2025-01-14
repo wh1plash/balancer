@@ -21,7 +21,7 @@ func main() {
 	cfg := internal.MustLoad()
 	fmt.Printf("Load config params:\n{\n Direcory for monitoring: %s\n Direcory for balacing: %s\n Number of folders: %d\n}\n", cfg.SrcDir, cfg.DestDir, cfg.NumFolders)
 
-	fmt.Println("Startin balancer app")
+	fmt.Println("Starting balancer app")
 
 	fileChan := make(chan string)
 	go watchFiles(fileChan, cfg)
