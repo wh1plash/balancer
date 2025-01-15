@@ -1,0 +1,6 @@
+srcDir: './source'
+folders:
+  - '/home/volodymyr/Oleh/go/project/balancer_my/upload/load/path/folder1'
+  - '/home/volodymyr/Oleh/go/project/balancer_my/upload/load/folder2'
+  - '/home/volodymyr/Oleh/go/project/balancer_my/upload/folder3'
+  - '/home/volodymyr/Oleh/go/project/balancer_my/upload/my/path/folder4'

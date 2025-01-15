@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	SrcDir     string `yaml:"srcDir" env-default:"./monitor" env-required:"true"`
-	DestDir    string `yaml:"destDir" env-default:"./upload" env-required:"true"`
-	NumFolders int    `yaml:"numFolders" env-default:"2" env-required:"true"`
+	SrcDir string `yaml:"srcDir" env-default:"./monitor" env-required:"true"`
+	//DestDir    string `yaml:"destDir" env-default:"./upload" env-required:"true"`
+	//NumFolders int    `yaml:"numFolders" env-default:"2" env-required:"true"`
+	Folders []string `yaml:"folders"`
 }
 
 func MustLoad() *Config {

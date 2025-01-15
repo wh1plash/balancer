@@ -3,13 +3,13 @@ package main
 import (
 	"balancer_my/internal"
 	"fmt"
-	"hash/fnv"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"log"
 )
 
 var (
@@ -19,7 +19,7 @@ var (
 
 func main() {
 	cfg := internal.MustLoad()
-	fmt.Printf("Load config params:\n{\n Direcory for monitoring: %s\n Direcory for balacing: %s\n Number of folders: %d\n}\n", cfg.SrcDir, cfg.DestDir, cfg.NumFolders)
+	fmt.Printf("Load config params:\n{\n Direcory for monitoring: %s\n Direcoryes for balacing: %s\n}\n", cfg.SrcDir, cfg.Folders)
 
 	fmt.Println("Starting balancer app")
 
@@ -27,31 +27,33 @@ func main() {
 	go watchFiles(fileChan, cfg)
 
 	var wg sync.WaitGroup
-	for i := 0; i < 5; i++ {
+	for i := 0; i < len(cfg.Folders); i++ {
 		wg.Add(1)
-		go func() {
-			//defer wg.Done()
-			moveFile(fileChan, &wg, cfg)
-		}()
+		go func(i int) {
+			moveFile(fileChan, &wg, cfg.Folders[i])
+		}(i)
 	}
 
 	wg.Wait()
 
 }
 
-func moveFile(fileChan <-chan string, wg *sync.WaitGroup, cfg *internal.Config) {
+func moveFile(fileChan <-chan string, wg *sync.WaitGroup, folder string) {
+	if err := os.MkdirAll(folder, os.ModePerm); err != nil {
+		log.Fatalf("failed to create data directory: %s", folder)
+	}
+
 	for fileInChan := range fileChan {
 		defer wg.Done()
 		fmt.Println("Starting to move file...", fileInChan)
-		destPath := balanceFolder(cfg.DestDir, fileInChan, cfg.NumFolders)
 
-		targetPath := filepath.Join(destPath, filepath.Base(fileInChan))
+		targetPath := filepath.Join(folder, filepath.Base(fileInChan))
 
 		file, err := os.Create(targetPath)
 		if err != nil {
 			fmt.Println("Can't create file:", file)
 		}
-		defer file.Close()
+		
 
 		srcFile, err := os.Open(fileInChan)
 		if err != nil {
@@ -62,7 +64,8 @@ func moveFile(fileChan <-chan string, wg *sync.WaitGroup, cfg *internal.Config) 
 			fmt.Println("Can't copy file:", srcFile)
 		}
 		srcFile.Close()
-
+		file.Close()
+		
 		err = os.Remove(fileInChan)
 		if err != nil {
 			fmt.Println("Can't remove file:", fileInChan)
@@ -70,19 +73,6 @@ func moveFile(fileChan <-chan string, wg *sync.WaitGroup, cfg *internal.Config) 
 
 		fmt.Printf("File %s moved successfully to %s\n", srcFile.Name(), targetPath)
 	}
-}
-
-func balanceFolder(destDir string, path string, numDirs int) string {
-	h := fnv.New32a()
-	h.Write([]byte(path))
-	folderIndex := h.Sum32() % uint32(numDirs)
-	targetPath := filepath.Join(destDir, fmt.Sprintf("part_%d", folderIndex))
-
-	if err := os.MkdirAll(targetPath, os.ModePerm); err != nil {
-		log.Fatal("Can't create folder:", targetPath)
-	}
-
-	return targetPath
 }
 
 func watchFiles(fileChan chan<- string, cfg *internal.Config) {
